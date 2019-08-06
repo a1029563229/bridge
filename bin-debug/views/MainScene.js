@@ -14,6 +14,7 @@ var views;
         __extends(MainScene, _super);
         function MainScene(args) {
             var _this = _super.call(this, args) || this;
+            _this._currentMartix = 0;
             _this.skinName = 'resource/views/MainScene.exml';
             return _this;
         }
@@ -21,13 +22,14 @@ var views;
             _super.prototype.onComplete.call(this);
             this._generateFloors();
             this._addCharacter();
-            this._characterWalkHandler();
+            this._addTouchHandler();
+            // this._characterWalkHandler();
         };
         MainScene.prototype._generateFloors = function () {
             var floorsGroup = this.floors;
-            var floor = new modle.Floor(10);
+            var floor = this._martixFloor = new modle.Floor(10);
             var floors = floor.getMartix();
-            for (var i = 0; i < floors.length; i++) {
+            for (var i = this._currentMartix; i < floors.length; i++) {
                 var martix = floors[i];
                 var floorProps = this._getLocate(martix);
                 var floorItem = this._getFloorItem(floorProps);
@@ -35,11 +37,14 @@ var views;
             }
         };
         MainScene.prototype._getLocate = function (martix) {
+            var x = this._getLocalPoint(martix[0]);
+            var width = this._getLocalPoint(martix[1] - martix[0]);
+            return { x: x, width: width };
+        };
+        MainScene.prototype._getLocalPoint = function (locate) {
             var stageWidth = cm.main.stage.stageWidth;
             var itemWidth = stageWidth / 100;
-            var x = martix[0] * itemWidth;
-            var width = (martix[1] - martix[0]) * itemWidth;
-            return { x: x, width: width };
+            return locate * itemWidth;
         };
         MainScene.prototype._getFloorItem = function (props) {
             var x = props.x, width = props.width;
@@ -54,18 +59,22 @@ var views;
         };
         MainScene.prototype._addCharacter = function () {
             var character = this._character = new views.Character('xiaocha', "");
+            var start = this._getLocalPoint(this._martixFloor.getEnd(this._currentMartix)) - 50;
             character.randomPlayWhenIdle({ actions: ['yawn', 'hello'], interval: 1000, rate: 0.05 });
             character.setDirection(views.CharacterDirection.RIGHT);
-            character.x = 50;
+            character.x = start;
             character.y = 0;
             this.grounds.addChild(character);
             this.grounds.setChildIndex(character, 0);
         };
+        MainScene.prototype._addTouchHandler = function () {
+            var touchCapture = new modle.TouchCapture();
+            touchCapture.bindNode(this, function (time) { return console.log(time); });
+        };
         MainScene.prototype._characterWalkHandler = function () {
             var _this = this;
             cm.Utils.delay(500, function () {
-                var point = new egret.Point(400);
-                _this._character.walkTo(point);
+                _this._character.walk();
             });
         };
         return MainScene;

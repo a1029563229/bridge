@@ -3,6 +3,7 @@
         width="750" height="1334">
     <e:Group left="0" right="0" top="0" bottom="0">
         <e:Group id="grounds" left="0" right="0" bottom="500" />
+        <e:Image source="main_json.line" width="20" height="100" bottom="495"  scale9Grid="4,8,2,3"/>
         <e:Group id="floors" bottom="0" />
     </e:Group>
 </e:Skin>

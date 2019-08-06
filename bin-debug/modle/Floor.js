@@ -34,6 +34,12 @@ var modle;
         Floor.prototype.getMartix = function () {
             return this._martix;
         };
+        Floor.prototype.getStart = function (index) {
+            return this._martix[index][0];
+        };
+        Floor.prototype.getEnd = function (index) {
+            return this._martix[index][1];
+        };
         return Floor;
     }());
     modle.Floor = Floor;

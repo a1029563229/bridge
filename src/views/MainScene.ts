@@ -5,6 +5,10 @@ module views {
         grounds: eui.Group;
         floors: eui.Group;
         floor: eui.Image;
+        line: eui.Image;
+
+        private _martixFloor: modle.Floor;
+        private _currentMartix: number = 0;
 
         private _character: Character;
 
@@ -17,14 +21,15 @@ module views {
             super.onComplete();
             this._generateFloors();
             this._addCharacter();
-            this._characterWalkHandler();
+            this._addTouchHandler();
+            // this._characterWalkHandler();
         }
 
         private _generateFloors() {
             const floorsGroup = this.floors;
-            const floor = new modle.Floor(10);
+            const floor = this._martixFloor = new modle.Floor(10);
             const floors = floor.getMartix();
-            for (let i = 0; i < floors.length; i++) {
+            for (let i = this._currentMartix; i < floors.length; i++) {
                 const martix = floors[i];
                 const floorProps = this._getLocate(martix);
                 const floorItem = this._getFloorItem(floorProps);
@@ -33,11 +38,15 @@ module views {
         }
 
         private _getLocate(martix: number[]): FloorProps {
+            let x = this._getLocalPoint(martix[0])
+            let width = this._getLocalPoint(martix[1] - martix[0]);
+            return { x, width };
+        }
+
+        private _getLocalPoint(locate: number): number {
             const stageWidth = cm.main.stage.stageWidth;
             const itemWidth = stageWidth / 100;
-            let x = martix[0] * itemWidth;
-            let width = (martix[1] - martix[0]) * itemWidth;
-            return { x, width };
+            return locate * itemWidth;
         }
 
         private _getFloorItem(props: FloorProps): eui.Image {
@@ -54,18 +63,23 @@ module views {
 
         private _addCharacter(): void {
             let character = this._character = new views.Character('xiaocha', "");
+            const start = this._getLocalPoint(this._martixFloor.getEnd(this._currentMartix)) - 50;
             character.randomPlayWhenIdle({ actions: ['yawn', 'hello'], interval: 1000, rate: 0.05 });
             character.setDirection(CharacterDirection.RIGHT);
-            character.x = 50;
+            character.x = start;
             character.y = 0;
             this.grounds.addChild(character);
             this.grounds.setChildIndex(character, 0);
         }
 
+        private _addTouchHandler(): void {
+            const touchCapture = new modle.TouchCapture();
+            touchCapture.bindNode(this, time => console.log(time));
+        }
+
         private _characterWalkHandler(): void {
             cm.Utils.delay(500, () => {
-                const point = new egret.Point(400);
-                this._character.walkTo(point);
+                this._character.walk();
             });
         }
     }

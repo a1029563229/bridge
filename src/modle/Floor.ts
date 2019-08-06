@@ -1,5 +1,5 @@
 module modle {
-    type Martix = Array<number[]>;
+    export type Martix = Array<number[]>;
     
     const MIN_FLOOR = 10;
     const MAX_FLOOR = 50;
@@ -37,6 +37,14 @@ module modle {
 
         public getMartix(): Martix {
             return this._martix;
+        }
+
+        public getStart(index: number) {
+            return this._martix[index][0];
+        }
+
+        public getEnd(index: number) {
+            return this._martix[index][1];
         }
     }
 }
