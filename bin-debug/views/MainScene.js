@@ -60,6 +60,7 @@ var views;
         MainScene.prototype._addCharacter = function () {
             var character = this._character = new views.Character('xiaocha', "");
             var start = this._getLocalPoint(this._martixFloor.getEnd(this._currentMartix)) - 50;
+            this.line.x = start + 35;
             character.randomPlayWhenIdle({ actions: ['yawn', 'hello'], interval: 1000, rate: 0.05 });
             character.setDirection(views.CharacterDirection.RIGHT);
             character.x = start;
