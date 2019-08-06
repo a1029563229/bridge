@@ -1,7 +1,7 @@
 module modle {
     export type Martix = Array<number[]>;
     
-    const MIN_FLOOR = 10;
+    const MIN_FLOOR = 15;
     const MAX_FLOOR = 50;
     const MIN_LIMIT = 10;
     const MAX_LIMIT = 30;

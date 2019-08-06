@@ -1,5 +1,6 @@
 module views {
     type FloorProps = { x: number, width: number }
+    const LINE_SCALE = .5;
 
     export class MainScene extends cm.BaseScene {
         grounds: eui.Group;
@@ -7,7 +8,9 @@ module views {
         floor: eui.Image;
         line: eui.Image;
 
+
         private _martixFloor: modle.Floor;
+        private _touchCapture: modle.TouchCapture;
         private _currentMartix: number = 0;
 
         private _character: Character;
@@ -74,8 +77,36 @@ module views {
         }
 
         private _addTouchHandler(): void {
-            const touchCapture = new modle.TouchCapture();
-            touchCapture.bindNode(this, time => console.log(time));
+            this._touchCapture = new modle.TouchCapture();
+            this._touchCapture.bindNode(this);
+            this._enableTouchHandler();
+        }
+
+        private _enableTouchHandler(): void {
+            this._touchCapture.addEventListener(modle.TouchCaptureEvent.ON_PROGRESS, this._onLineProgressHandler, this);
+            this._touchCapture.addEventListener(modle.TouchCaptureEvent.ON_COMPLETE, this._rotationLine, this);
+        }
+
+        private _disableTouchHandler(): void {
+            this._touchCapture.removeEventListener(modle.TouchCaptureEvent.ON_PROGRESS, this._onLineProgressHandler, this);
+            this._touchCapture.removeEventListener(modle.TouchCaptureEvent.ON_COMPLETE, this._rotationLine, this);
+        }
+
+        private _onLineProgressHandler(e: modle.TouchCaptureEvent): void {
+            const { data: progress } = e;
+            const locateLength = Math.round(this._getLocalPoint(progress * LINE_SCALE));
+            this.line.height = locateLength;
+        }
+
+        private _rotationLine(e: modle.TouchCaptureEvent): void {
+            this._disableTouchHandler();
+            const { data: progress } = e;
+            this.line.rotation = -180;
+            egret.Tween.get(this.line).to({
+                rotation: -90
+            }, 500).call(() => {
+                console.log({ progress })
+            }, this);
         }
 
         private _characterWalkHandler(): void {

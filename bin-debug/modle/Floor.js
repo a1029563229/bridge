@@ -3,7 +3,7 @@ var __reflect = (this && this.__reflect) || function (p, c, t) {
 };
 var modle;
 (function (modle) {
-    var MIN_FLOOR = 10;
+    var MIN_FLOOR = 15;
     var MAX_FLOOR = 50;
     var MIN_LIMIT = 10;
     var MAX_LIMIT = 30;

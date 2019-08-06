@@ -10,6 +10,7 @@ r.prototype = e.prototype, t.prototype = new r();
 };
 var views;
 (function (views) {
+    var LINE_SCALE = .5;
     var MainScene = (function (_super) {
         __extends(MainScene, _super);
         function MainScene(args) {
@@ -69,8 +70,32 @@ var views;
             this.grounds.setChildIndex(character, 0);
         };
         MainScene.prototype._addTouchHandler = function () {
-            var touchCapture = new modle.TouchCapture();
-            touchCapture.bindNode(this, function (time) { return console.log(time); });
+            this._touchCapture = new modle.TouchCapture();
+            this._touchCapture.bindNode(this);
+            this._enableTouchHandler();
+        };
+        MainScene.prototype._enableTouchHandler = function () {
+            this._touchCapture.addEventListener(modle.TouchCaptureEvent.ON_PROGRESS, this._onLineProgressHandler, this);
+            this._touchCapture.addEventListener(modle.TouchCaptureEvent.ON_COMPLETE, this._rotationLine, this);
+        };
+        MainScene.prototype._disableTouchHandler = function () {
+            this._touchCapture.removeEventListener(modle.TouchCaptureEvent.ON_PROGRESS, this._onLineProgressHandler, this);
+            this._touchCapture.removeEventListener(modle.TouchCaptureEvent.ON_COMPLETE, this._rotationLine, this);
+        };
+        MainScene.prototype._onLineProgressHandler = function (e) {
+            var progress = e.data;
+            var locateLength = Math.round(this._getLocalPoint(progress * LINE_SCALE));
+            this.line.height = locateLength;
+        };
+        MainScene.prototype._rotationLine = function (e) {
+            this._disableTouchHandler();
+            var progress = e.data;
+            this.line.rotation = -180;
+            egret.Tween.get(this.line).to({
+                rotation: -90
+            }, 500).call(function () {
+                console.log({ progress: progress });
+            }, this);
         };
         MainScene.prototype._characterWalkHandler = function () {
             var _this = this;
