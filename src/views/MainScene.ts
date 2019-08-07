@@ -10,13 +10,19 @@ module views {
         floor: eui.Image;
         line: eui.Image;
         prompt: eui.Label;
+        count: eui.Label;
 
 
         private _martixFloor: modle.Floor;
         private _touchCapture: modle.TouchCapture;
+        // 当前位置，用于角色行走计算
         private _currentPosition: number = 0;
+        // 当前节点，由 _currentPosition 计算得出的当前本地坐标
         private _currentPoint: number = 0;
+        // 当前阶梯，用于动态生成新的阶梯
         private _currentMartix: number = 0;
+        // 积分
+        private _count: number = 0;
         private _progress: number = 50;
         private _isComeDown: boolean = false;
 
@@ -38,7 +44,25 @@ module views {
             this._currentPoint = this._martixFloor.getEnd(this._currentMartix);
             this._generateFloors(martixs);
             this._addCharacter();
-            this._addTouchHandler();
+            // 等待角色移动到第一个阶梯开始添加游戏事件
+            cm.Utils.delay(500, () => {
+                this._addTouchHandler();
+            });
+        }
+
+        private _reStart(): void {
+            this._currentMartix = 0;
+            this._currentPosition = 0;
+            this._count = 0;
+            this._isComeDown = false;
+
+            this.prompt.text = '长按屏幕开始游戏';
+            this.count.text = '得分：0';
+            this.floors.removeChildren();
+            this.floors.x = 0;
+            this._character.y = 500;
+            this._init();
+            this._move();
         }
 
         private _generateFloors(martixs: modle.Martix) {
@@ -76,6 +100,7 @@ module views {
         }
 
         private _addCharacter(): void {
+            if (this._character) return;
             let character = this._character = new views.Character('xiaocha', "");
             character.randomPlayWhenIdle({ actions: ['yawn', 'hello'], interval: 1000, rate: 0.05 });
             character.setDirection(CharacterDirection.RIGHT);
@@ -88,17 +113,20 @@ module views {
         }
 
         private _addTouchHandler(): void {
+            if (this._touchCapture) return this._enableTouchHandler();
             this._touchCapture = new modle.TouchCapture();
             this._touchCapture.bindNode(this);
             this._enableTouchHandler();
         }
 
         private _enableTouchHandler(): void {
+            if (!this._touchCapture) return;
             this._touchCapture.addEventListener(modle.TouchCaptureEvent.ON_PROGRESS, this._onLineProgressHandler, this);
             this._touchCapture.addEventListener(modle.TouchCaptureEvent.ON_COMPLETE, this._rotationLine, this);
         }
 
         private _disableTouchHandler(): void {
+            if (!this._touchCapture) return;
             this._touchCapture.removeEventListener(modle.TouchCaptureEvent.ON_PROGRESS, this._onLineProgressHandler, this);
             this._touchCapture.removeEventListener(modle.TouchCaptureEvent.ON_COMPLETE, this._rotationLine, this);
         }
@@ -152,21 +180,29 @@ module views {
                     this._comeDown();
                     return;
                 }
-                this._reset();
+                if (this._currentPosition > 0) {
+                    this._addCount();
+                }
+                this._clear();
             });
         }
 
         private _comeDown(): void {
-            this.prompt.text = '您已坠落，游戏结束';
+            this.prompt.text = '您已坠落，游戏结束\n\n点击屏幕重新开始';
             this._character.idle();
             egret.Tween.get(this._character).to({
                 y: 1500
             }, 1000).call(() => {
-
+                this.once(egret.TouchEvent.TOUCH_END, this._reStart, this);
             });
         }
 
-        private _reset(): void {
+        private _addCount(): void {
+            this._count += 10;
+            this.count.text = `得分：${this._count}`;
+        }
+
+        private _clear(): void {
             this._character.idle();
             this.line.x = this._character.x + 40;
             this.line.rotation = 0;

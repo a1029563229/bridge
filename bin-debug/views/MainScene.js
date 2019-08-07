@@ -17,9 +17,14 @@ var views;
         __extends(MainScene, _super);
         function MainScene(args) {
             var _this = _super.call(this, args) || this;
+            // 当前位置，用于角色行走计算
             _this._currentPosition = 0;
+            // 当前节点，由 _currentPosition 计算得出的当前本地坐标
             _this._currentPoint = 0;
+            // 当前阶梯，用于动态生成新的阶梯
             _this._currentMartix = 0;
+            // 积分
+            _this._count = 0;
             _this._progress = 50;
             _this._isComeDown = false;
             _this.skinName = 'resource/views/MainScene.exml';
@@ -30,12 +35,29 @@ var views;
             this._init();
         };
         MainScene.prototype._init = function () {
+            var _this = this;
             this._martixFloor = new modle.Floor(10);
             var martixs = this._martixFloor.getMartix();
             this._currentPoint = this._martixFloor.getEnd(this._currentMartix);
             this._generateFloors(martixs);
             this._addCharacter();
-            this._addTouchHandler();
+            // 等待角色移动到第一个阶梯开始添加游戏事件
+            cm.Utils.delay(500, function () {
+                _this._addTouchHandler();
+            });
+        };
+        MainScene.prototype._reStart = function () {
+            this._currentMartix = 0;
+            this._currentPosition = 0;
+            this._count = 0;
+            this._isComeDown = false;
+            this.prompt.text = '长按屏幕开始游戏';
+            this.count.text = '得分：0';
+            this.floors.removeChildren();
+            this.floors.x = 0;
+            this._character.y = 500;
+            this._init();
+            this._move();
         };
         MainScene.prototype._generateFloors = function (martixs) {
             var floorsGroup = this.floors;
@@ -68,6 +90,8 @@ var views;
             return floorItem;
         };
         MainScene.prototype._addCharacter = function () {
+            if (this._character)
+                return;
             var character = this._character = new views.Character('xiaocha', "");
             character.randomPlayWhenIdle({ actions: ['yawn', 'hello'], interval: 1000, rate: 0.05 });
             character.setDirection(views.CharacterDirection.RIGHT);
@@ -79,15 +103,21 @@ var views;
             character.callback = this._move.bind(this);
         };
         MainScene.prototype._addTouchHandler = function () {
+            if (this._touchCapture)
+                return this._enableTouchHandler();
             this._touchCapture = new modle.TouchCapture();
             this._touchCapture.bindNode(this);
             this._enableTouchHandler();
         };
         MainScene.prototype._enableTouchHandler = function () {
+            if (!this._touchCapture)
+                return;
             this._touchCapture.addEventListener(modle.TouchCaptureEvent.ON_PROGRESS, this._onLineProgressHandler, this);
             this._touchCapture.addEventListener(modle.TouchCaptureEvent.ON_COMPLETE, this._rotationLine, this);
         };
         MainScene.prototype._disableTouchHandler = function () {
+            if (!this._touchCapture)
+                return;
             this._touchCapture.removeEventListener(modle.TouchCaptureEvent.ON_PROGRESS, this._onLineProgressHandler, this);
             this._touchCapture.removeEventListener(modle.TouchCaptureEvent.ON_COMPLETE, this._rotationLine, this);
         };
@@ -141,18 +171,27 @@ var views;
                     _this._comeDown();
                     return;
                 }
-                _this._reset();
+                if (_this._currentPosition > 0) {
+                    _this._addCount();
+                }
+                _this._clear();
             });
         };
         MainScene.prototype._comeDown = function () {
-            this.prompt.text = '您已坠落，游戏结束';
+            var _this = this;
+            this.prompt.text = '您已坠落，游戏结束\n\n点击屏幕重新开始';
             this._character.idle();
             egret.Tween.get(this._character).to({
                 y: 1500
             }, 1000).call(function () {
+                _this.once(egret.TouchEvent.TOUCH_END, _this._reStart, _this);
             });
         };
-        MainScene.prototype._reset = function () {
+        MainScene.prototype._addCount = function () {
+            this._count += 10;
+            this.count.text = "\u5F97\u5206\uFF1A" + this._count;
+        };
+        MainScene.prototype._clear = function () {
             this._character.idle();
             this.line.x = this._character.x + 40;
             this.line.rotation = 0;
