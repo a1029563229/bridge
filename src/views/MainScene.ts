@@ -1,17 +1,24 @@
 module views {
     type FloorProps = { x: number, width: number }
     const LINE_SCALE = .5;
+    const CHARACTER_WIDTH = 100;
+    const SPEED = 40;
 
     export class MainScene extends cm.BaseScene {
         grounds: eui.Group;
         floors: eui.Group;
         floor: eui.Image;
         line: eui.Image;
+        prompt: eui.Label;
 
 
         private _martixFloor: modle.Floor;
         private _touchCapture: modle.TouchCapture;
+        private _currentPosition: number = 0;
+        private _currentPoint: number = 0;
         private _currentMartix: number = 0;
+        private _progress: number = 50;
+        private _isComeDown: boolean = false;
 
         private _character: Character;
 
@@ -22,18 +29,22 @@ module views {
 
         onComplete() {
             super.onComplete();
-            this._generateFloors();
-            this._addCharacter();
-            this._addTouchHandler();
-            // this._characterWalkHandler();
+            this._init();
         }
 
-        private _generateFloors() {
+        private _init(): void {
+            this._martixFloor = new modle.Floor(10);
+            const martixs = this._martixFloor.getMartix();
+            this._currentPoint = this._martixFloor.getEnd(this._currentMartix);
+            this._generateFloors(martixs);
+            this._addCharacter();
+            this._addTouchHandler();
+        }
+
+        private _generateFloors(martixs: modle.Martix) {
             const floorsGroup = this.floors;
-            const floor = this._martixFloor = new modle.Floor(10);
-            const floors = floor.getMartix();
-            for (let i = this._currentMartix; i < floors.length; i++) {
-                const martix = floors[i];
+            for (let i = this._currentMartix; i < martixs.length; i++) {
+                const martix = martixs[i];
                 const floorProps = this._getLocate(martix);
                 const floorItem = this._getFloorItem(floorProps);
                 floorsGroup.addChild(floorItem);
@@ -66,14 +77,14 @@ module views {
 
         private _addCharacter(): void {
             let character = this._character = new views.Character('xiaocha', "");
-            const start = this._getLocalPoint(this._martixFloor.getEnd(this._currentMartix)) - 50;
-            this.line.x = start + 35;
             character.randomPlayWhenIdle({ actions: ['yawn', 'hello'], interval: 1000, rate: 0.05 });
             character.setDirection(CharacterDirection.RIGHT);
-            character.x = start;
-            character.y = 0;
+            character.x = CHARACTER_WIDTH / 2;
+            this.line.x = character.x + 40;
+            character.y = 500;
             this.grounds.addChild(character);
             this.grounds.setChildIndex(character, 0);
+            character.callback = this._move.bind(this);
         }
 
         private _addTouchHandler(): void {
@@ -105,14 +116,68 @@ module views {
             egret.Tween.get(this.line).to({
                 rotation: -90
             }, 500).call(() => {
-                console.log({ progress })
+                this._currentPosition += 1;
+                this._currentPoint = this._getTargetPoint(progress);
+                this._move();
             }, this);
         }
 
-        private _characterWalkHandler(): void {
-            cm.Utils.delay(500, () => {
-                this._character.walk();
+        private _getTargetPoint(point: number): number {
+            let targetPoint = this._currentPoint + Math.floor(point * LINE_SCALE);
+            const martixs = this._martixFloor.getMartix()
+            const [start, end] = martixs[this._currentPosition];
+            if (targetPoint > start && targetPoint < end) {
+                targetPoint = end;
+            } else {
+                this._isComeDown = true;
+            }
+            return targetPoint;
+        }
+
+        private _move(): void {
+            const target = this._getLocalPoint(this._currentPoint);
+            const originalX = this.floors.x;
+            const x = -target + CHARACTER_WIDTH;
+            this._character.walk();
+            egret.Tween.get(this.line).to({
+                x: x - originalX
+            }, Math.abs(originalX - x) * 100 / SPEED).call(() => {
+                this.line.x = this._character.x + 40;
             });
+            egret.Tween.get(this.floors).to({
+                x
+            }, Math.abs(originalX - x) * 100 / SPEED).call(() => {
+                if (this._isComeDown) {
+                    this._comeDown();
+                    return;
+                }
+                this._reset();
+            });
+        }
+
+        private _comeDown(): void {
+            this.prompt.text = '您已坠落，游戏结束';
+            this._character.idle();
+            egret.Tween.get(this._character).to({
+                y: 1500
+            }, 1000).call(() => {
+
+            });
+        }
+
+        private _reset(): void {
+            this._character.idle();
+            this.line.x = this._character.x + 40;
+            this.line.rotation = 0;
+            this.line.height = 0;
+            this._enableTouchHandler();
+
+            const martixLength = this._martixFloor.getMartix().length;
+            const currentPosition = this._currentPosition;
+            if (martixLength - currentPosition < 5) {
+                const martixs = this._martixFloor.addMartix(10);
+                this._generateFloors(martixs);
+            }
         }
     }
 }

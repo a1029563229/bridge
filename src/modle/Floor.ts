@@ -1,6 +1,6 @@
 module modle {
     export type Martix = Array<number[]>;
-    
+
     const MIN_FLOOR = 15;
     const MAX_FLOOR = 50;
     const MIN_LIMIT = 10;
@@ -21,8 +21,28 @@ module modle {
 
         private _init(): void {
             this._martix = [];
-            let originalLocation = [];
-            for (let i = 0; i < this._num; i++) {
+            // 初始节点恒定宽度为 50
+            this._martix[0] = [0, 50];
+            const martixs = this._generateMartix(this._num - 1, this._martix[0]);
+            this._martix = [...this._martix, ...martixs];
+        }
+
+        /**
+         * 动态添加 martix
+         * @param {number} n 新增的数量
+         */
+        public addMartix(n: number): Martix {
+            const originalLocation = this._martix[this._num - 1];
+            this._num += n;
+            const martixs = this._generateMartix(n, originalLocation);
+            this._martix = [...this._martix, ...martixs];
+            return martixs;
+        }
+
+        private _generateMartix(n: number, original: number[] = []): Martix {
+            const martixs = [];
+            let originalLocation = original;
+            for (let i = 0; i < n; i++) {
                 let location = [];
                 if (!originalLocation[1]) {
                     location[0] = 0;
@@ -31,8 +51,9 @@ module modle {
                 }
                 location[1] = location[0] + random(MIN_FLOOR, MAX_FLOOR);
                 originalLocation = location;
-                this._martix.push(location);
+                martixs.push(location);
             }
+            return martixs;
         }
 
         public getMartix(): Martix {

@@ -43,11 +43,11 @@
     },
 		{
 			"name": "mouse",
-			"path": "./egret-game-lib/mouse/libsrc"
+			"path": "../egret-game-lib/mouse/libsrc"
 		},
 		{
 			"name": "cmlib",
-			"path": "./egret-game-lib/cmlib"
+			"path": "../egret-game-lib/cmlib"
 		}
   ]
 }
