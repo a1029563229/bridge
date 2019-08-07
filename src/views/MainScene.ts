@@ -142,6 +142,7 @@ module views {
             egret.Tween.get(this.line).to({
                 x: x - originalX
             }, Math.abs(originalX - x) * 100 / SPEED).call(() => {
+                if (this._isComeDown) return;
                 this.line.x = this._character.x + 40;
             });
             egret.Tween.get(this.floors).to({
